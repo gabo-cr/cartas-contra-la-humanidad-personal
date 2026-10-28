@@ -4,15 +4,7 @@ import { withStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import { Typography } from '@material-ui/core';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import ExpansionPanel from '@material-ui/core/ExpansionPanel';
-import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
-import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Interweave from 'interweave';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
@@ -22,16 +14,40 @@ const styles = (theme) => ({
   },
   paper: {
     padding: theme.spacing.unit * 2,
-    textAlign: 'center',
+    textAlign: 'left',
     color: theme.palette.text.secondary,
-    minWidth: '13%',
-    minHeight: '100px'
+    width: '150px',
+    height: '200px'
   },
   heading: {
     fontSize: theme.typography.pxToRem(15),
     fontWeight: theme.typography.fontWeightRegular
-  }
+  },
 });
+
+const scoreStyles = {
+  wrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '10px',
+    margin: '10px 0',
+    border: '2px solid #000',
+    borderRadius: '30px'
+  },
+  score: {
+    borderRadius: '50%',
+    width: '30px',
+    height: '30px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ccc'
+  },
+  zar: {
+    color: '#7f1b1b'
+  }
+};
 
 class TheActualGame extends Component {
   render() {
@@ -47,41 +63,68 @@ class TheActualGame extends Component {
 
     return (
       <div className={classes.root}>
+        <div style={{ marginTop: '20px', maxWidth: '500px' }}>
+          <div expandIcon={<ExpandMoreIcon />}>
+            <Typography className={classes.heading}>Puntos</Typography>
+          </div>
+          <div style={{ display: 'flex', width: '100%', gap: '10px' }}>
+                {
+                  game.players.map((player, playerIndex) => {
+                    return (
+                      <div key={player.username} style={scoreStyles.wrapper}>
+                        <div style={scoreStyles.score}>
+                          {player.score}
+                        </div>
+                        {
+                          playerIndex === game.gameState.czar
+                            ? <div style={scoreStyles.zar}>
+                                {player.username} (Zar)
+                              </div>
+                            : <div>
+                                {player.username}
+                              </div>
+                        }
+                      </div>
+                    );
+                  })
+                }
+          </div>
+        </div>
+
         <Grid id='played-cards' container spacing={2}>
-          <Grid className='card' item xs={1}>
+          <Grid className='card' item>
             <Paper className={'black-card ' + classes.paper} style={{ position: 'relative' }}>
               <Interweave content={game.gameState.blackCard.text} />
-              <br /><br />
               <Typography style={{
                 color: 'rgba(255,255,255,0.6)',
                 position: 'absolute',
-                bottom: '0px',
-                right: '5px'
+                bottom: '10px',
+                left: '10px'
               }}><strong>Elige {game.gameState.blackCard.pick}</strong></Typography>
             </Paper>
           </Grid>
           {
             isCzar
               ? game.gameState.czarReady
-                ? <Grid className='card white-card zar-card' item xs={1}>
+                ? <Grid className='card white-card zar-card' item>
                   <Paper className={classes.paper} style={{ marginBottom: '10px' }}>Eres el Zar. Elige la carta blanca que quede mejor (o la más graciosa) con la carta negra.</Paper>
                 </Grid>
-                : <Grid className='card white-card zar-card' item xs={1}>
+                : <Grid className='card white-card zar-card' item>
                   <Paper className={classes.paper}>Eres el Zar... espera a que todos jueguen.</Paper>
                 </Grid>
               : hasPlayedCard
                 ? !game.gameState.czarReady
                   ? game.gameState.playedWhiteCards[clientIndex].cards.map((card, index) => {
                     return (
-                      <Grid className='card card-hover white-card' item xs={1} key={index}>
+                      <Grid className='card card-hover white-card' item key={index}>
                         <Paper className={classes.paper} style={{ marginBottom: '10px' }}><Interweave content={card} /></Paper>
                       </Grid>
                     );
                   })
-                  : <Grid className='card white-card' item xs={1}>
+                  : <Grid className='card white-card' item>
                     <Paper className={classes.paper} style={{ marginBottom: '10px' }}>Espera a que el árbitro escoja la(s) mejor(es) carta(s) blanca(s).</Paper>
                   </Grid>
-                : <Grid className='card white-card' item xs={1}>
+                : <Grid className='card white-card' item>
                   <Paper className={classes.paper}>
                     Haz click en una carta para jugarla.
                     <br /><br />
@@ -93,7 +136,7 @@ class TheActualGame extends Component {
             game.gameState.czarReady
               ? game.gameState.playedWhiteCards.map((player, index) => {
                 return (
-                  <Grid className='card card-hover white-card' item xs={1} key={index} onClick={
+                  <Grid className='card card-hover white-card' item key={index} onClick={
                     isCzar
                       ? czarPick(player.username)
                       : null
@@ -124,51 +167,10 @@ class TheActualGame extends Component {
           }
         </Grid>
 
-        <ExpansionPanel style={{ marginTop: '20px', maxWidth: '500px' }}>
-          <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography className={classes.heading}>Puntos</Typography>
-          </ExpansionPanelSummary>
-          <ExpansionPanelDetails>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Jugador</TableCell>
-                  <TableCell>Puntos Increíbles (10 para ganar)</TableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {
-                  game.players.map((player, playerIndex) => {
-                    return (
-                      <TableRow key={player.username}>
-                        <TableCell component='th' scope='row'>
-                          {
-                            playerIndex === game.gameState.czar
-                              ? player.username === username
-                                ? <strong>{player.username} (Árbitro) (Tú)</strong>
-                                : `${player.username} (Czar)`
-                              : player.username === username
-                                ? <strong>{player.username} (Tú)</strong>
-                                : player.username
-                          }
-                        </TableCell>
-                        <TableCell>
-                          {player.score}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                }
-              </TableBody>
-            </Table>
-          </ExpansionPanelDetails>
-        </ExpansionPanel>
-
         {!isCzar && (
 
           <div id='hand'>
-            <Typography variant='h4' style={{ marginBottom: '10px' }}>Tu mano:</Typography>
+            <hr style={{ margin: '20px 0' }}></hr>
             <Grid container spacing={2}>
               <TransitionGroup component={React.Fragment}>
                 {
@@ -183,7 +185,7 @@ class TheActualGame extends Component {
                       >
                         <Grid
                           className='card card-hover white-card'
-                          item xs={1} onClick={playCard(cardIndex)}>
+                          item onClick={playCard(cardIndex)}>
                           <Paper className={classes.paper}><Interweave content={card} /></Paper>
                         </Grid>
                       </CSSTransition>
