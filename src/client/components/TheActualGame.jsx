@@ -57,17 +57,17 @@ class TheActualGame extends Component {
                 position: 'absolute',
                 bottom: '0px',
                 right: '5px'
-              }}><strong>Pick {game.gameState.blackCard.pick}</strong></Typography>
+              }}><strong>Elige {game.gameState.blackCard.pick}</strong></Typography>
             </Paper>
           </Grid>
           {
             isCzar
               ? game.gameState.czarReady
-                ? <Grid className='card white-card' item xs={1}>
-                  <Paper className={classes.paper} style={{ marginBottom: '10px' }}>Todos han jugado. Elije la(s) mejor(es) carta(s) blanca(s).</Paper>
+                ? <Grid className='card white-card zar-card' item xs={1}>
+                  <Paper className={classes.paper} style={{ marginBottom: '10px' }}>Eres el Zar. Elige la carta blanca que quede mejor (o la más graciosa) con la carta negra.</Paper>
                 </Grid>
-                : <Grid className='card white-card' item xs={1}>
-                  <Paper className={classes.paper}>Eres el árbitro... Espera a que todos jueguen.</Paper>
+                : <Grid className='card white-card zar-card' item xs={1}>
+                  <Paper className={classes.paper}>Eres el Zar... espera a que todos jueguen.</Paper>
                 </Grid>
               : hasPlayedCard
                 ? !game.gameState.czarReady
@@ -165,32 +165,35 @@ class TheActualGame extends Component {
           </ExpansionPanelDetails>
         </ExpansionPanel>
 
-        <div id='hand'>
-          <Typography variant='h4' style={{ marginBottom: '10px' }}>Tu mano:</Typography>
-          <Grid container spacing={2}>
-            <TransitionGroup component={React.Fragment}>
-              {
-                game.players.find((player) => {
-                  return username === player.username;
-                }).hand.map((card, cardIndex) => {
-                  return (
-                    <CSSTransition
-                      key={card}
-                      timeout={500}
-                      classNames='item'
-                    >
-                      <Grid
-                        className='card card-hover white-card'
-                        item xs={1} onClick={playCard(cardIndex)}>
-                        <Paper className={classes.paper}><Interweave content={card} /></Paper>
-                      </Grid>
-                    </CSSTransition>
-                  );
-                })
-              }
-            </TransitionGroup>
-          </Grid>
-        </div>
+        {!isCzar && (
+
+          <div id='hand'>
+            <Typography variant='h4' style={{ marginBottom: '10px' }}>Tu mano:</Typography>
+            <Grid container spacing={2}>
+              <TransitionGroup component={React.Fragment}>
+                {
+                  game.players.find((player) => {
+                    return username === player.username;
+                  }).hand.map((card, cardIndex) => {
+                    return (
+                      <CSSTransition
+                        key={card}
+                        timeout={500}
+                        classNames='item'
+                      >
+                        <Grid
+                          className='card card-hover white-card'
+                          item xs={1} onClick={playCard(cardIndex)}>
+                          <Paper className={classes.paper}><Interweave content={card} /></Paper>
+                        </Grid>
+                      </CSSTransition>
+                    );
+                  })
+                }
+              </TransitionGroup>
+            </Grid>
+          </div>
+        )}
       </div>
     );
   }

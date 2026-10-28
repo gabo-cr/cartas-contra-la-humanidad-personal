@@ -35,8 +35,10 @@ const theme = createMuiTheme({
     }
   },
   typography: {
-    useNextVariants: true
-  }
+    useNextVariants: true,
+    fontFamily: `"Outfit", "Helvetica", "Arial", sans-serif`,
+    fontSize: 16,
+  },
 });
 const styles = {
   root: {
@@ -70,7 +72,7 @@ class App extends Component {
 
     this.state = {
       // Game
-      username: '',
+      username: localStorage.getItem('username') || '',
       connected: false,
       allDecksSelected: false,
       game: {},
@@ -91,12 +93,14 @@ class App extends Component {
   }
 
   handleUsernameChange = (event) => {
-    this.setState({ username: event.target.value });
+    const username = event.target.value;
+
+    this.setState({ username });
+    localStorage.setItem('username', username);
   }
 
-  componentDidUpdate() {
-    
-  }
+  componentDidUpdate() {}
+
   connectToGame = () => {
     const { username } = this.state;
 

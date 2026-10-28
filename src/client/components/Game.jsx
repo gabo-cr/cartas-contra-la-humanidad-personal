@@ -136,8 +136,9 @@ class Game extends Component {
                           input={<Input name='timeoutTime' id='timeout-time' />}
                         >
                           <MenuItem value={30}>30 segundos</MenuItem>
-                          <MenuItem value={60}>60 segundos</MenuItem>
-                          <MenuItem value={120}>120 segundos</MenuItem>
+                          <MenuItem value={60}>1 minuto</MenuItem>
+                          <MenuItem value={120}>2 minutos</MenuItem>
+                          <MenuItem value={180}>3 minutos</MenuItem>
                         </Select>
                         <FormHelperText>Cuánto debería durar el turno de cada jugador antes de que una carta se juegue automáticamente.</FormHelperText>
                       </FormControl>
@@ -145,6 +146,7 @@ class Game extends Component {
                     : null
                 }
 
+                {/*
                 <Typography variant='h4' style={{ marginTop: '20px' }}>Selecciona barajas a usar</Typography>
                 <Button variant='outlined' color='primary' className={classes.button} onClick={toggleAllDecks} disabled={username !== game.players[0].username}>Alternar todas</Button>
 
@@ -234,6 +236,7 @@ class Game extends Component {
                     })
                   }
                 </FormGroup>
+                */}
 
                 <Typography variant='h4' style={{ marginTop: '20px' }} onClick={this.openDialog}>Jugadores conectados</Typography>
                 <ul>
@@ -294,6 +297,7 @@ class Game extends Component {
             : null
         }
 
+        {/*
         <Dialog
           open={this.state.jsonDialog}
           TransitionComponent={Transition}
@@ -317,6 +321,7 @@ class Game extends Component {
             </Button>
           </DialogActions>
         </Dialog>
+        */}
       </div>
     );
   }

@@ -1,11 +1,22 @@
-@import url('https://fonts.googleapis.com/css?family=Heebo:800');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 
 * {
-  font-family: sans-serif;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5rem;
+
+  div {
+    box-sizing: border-box !important;
+  }
 }
 body {
   margin: 0px;
   padding: 0px;
+
+  p {
+    font-size: 1.5rem;
+  }
 }
 
 @keyframes opacityOnAndOff {
@@ -48,6 +59,14 @@ a {
   min-width: 150px;
   overflow-wrap: break-word;
   transition: transform 350ms cubic-bezier(0.19, 1, 0.22, 1), opacity 350ms linear, margin-right 350ms cubic-bezier(0.19, 1, 0.22, 1);
+
+  div {
+    border-radius: 15px;
+
+    span {
+      text-align: left !important;
+    }
+  }
 }
 .item-enter {
   transform: translateX(100vw);
@@ -71,43 +90,39 @@ a {
 }
 .white-card {
   div {
-    font-family: 'Heebo', sans-serif;
     color: #383838;
     
     span {
-      font-family: 'Heebo', sans-serif;
       color: #383838;
     }
   }
 }
+.zar-card {
+  div {
+    background-color: #edecec;
+    color: #000;
+    border: 1px dashed #000;
+  }
+}
 .black-card {
-  min-width: 150px;
   overflow-wrap: break-word;
 
   background-color: #212121 !important;
   color: white !important;
-
-  span {
-    font-family: 'Heebo', sans-serif;
-  }
 }
 
 #connect-area {
   max-width: 950px;
-  margin-right: auto;
-  margin-left: auto;
-  padding-left: 25px;
-  padding-right: 25px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
 }
 #game-area {
-  max-width: 95%;
-  margin-top: 20px;
-  margin-right: auto;
-  margin-left: auto;
-  padding-left: 25px;
-  padding-right: 25px;
+  max-width: 950px;
+  margin: 0 auto;
+  padding: 20px 25px;
 }
 #hand {
-  position: fixed;
-  bottom: 15px;
+  position: relative;
+  margin-bottom: 20px;
 }

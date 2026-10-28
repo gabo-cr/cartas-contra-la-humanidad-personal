@@ -24,6 +24,7 @@ let game = {
 };
 
 let timeLeftInterval;
+const disconnectTimers = new Map();
 
 function addDecks(addBlackCards, addWhiteCards) {
   const defaultDecksToUse = game.decks.filter((deck) => deck.selected && !deck.custom).map((deck) => {
@@ -127,8 +128,15 @@ function resetGame() {
   console.log('Game reset!');
 }
 function removePlayer(username) {
+  const playerIndex = game.players.findIndex(
+    (player) => player.username === username
+  );
+
+  if (playerIndex === -1) return;
+
   // Remove player.
-  game.players.splice(game.players.findIndex((x) => x.username === username), 1);
+  game.players.splice(playerIndex, 1);
+
   io.sockets.emit('updatedGame', game);
   console.log(`Jugador ${username} desconectado.`);
   game.log.push(`Jugador ${username} desconectado.`);
@@ -150,6 +158,27 @@ function removePlayer(username) {
 
 io.on('connection', (socket) => {
   socket.on('newPlayer', (username) => {
+    // Si el jugador ya existe, permitir que se reconecte.
+    const existingPlayer = game.players.find(
+      (player) => player.username === username
+    );
+
+    if (existingPlayer) {
+      const timer = disconnectTimers.get(username);
+
+      if (timer) {
+        clearTimeout(timer);
+        disconnectTimers.delete(username);
+      }
+
+      socket.username = username;
+
+      console.log(`Jugador ${username} reconectado.`);
+
+      io.sockets.emit('updatedGame', game);
+      return;
+    }
+
     console.log(`Jugador ${username} conectado.`);
     game.log.push(`Jugador ${username} conectado.`);
 
@@ -458,9 +487,28 @@ io.on('connection', (socket) => {
     console.log('El anfitrión terminó el juego.');
   });
   socket.on('disconnect', () => {
-    if(socket) {
-      removePlayer(socket.username);
-    }
+    const username = socket.username;
+
+    if (!username) return;
+
+    // Esperar antes de eliminar al jugador.
+    const timer = setTimeout(() => {
+      disconnectTimers.delete(username);
+
+      // Si el jugador ya se reconectó mediante otro socket,
+      // no eliminarlo de la partida.
+      const connectedSockets = Object.values(io.sockets.connected);
+
+      const isConnected = connectedSockets.some(
+        (connectedSocket) => connectedSocket.username === username
+      );
+
+      if (!isConnected) {
+        removePlayer(username);
+      }
+    }, 30000);
+
+    disconnectTimers.set(username, timer);
   });
 });
 
