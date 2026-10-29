@@ -5,6 +5,7 @@ import entities from 'entities';
 import { randomOf } from '@reverse/random';
 
 let game = {
+  hostUsername: null,
   players: [],
   timeoutTime: 0,
   gameState: {
@@ -23,7 +24,6 @@ let game = {
   log: []
 };
 
-let timeLeftInterval;
 const disconnectTimers = new Map();
 
 function addDecks(addBlackCards, addWhiteCards) {
@@ -100,15 +100,24 @@ function addDecks(addBlackCards, addWhiteCards) {
     }
     return array;
   }
-  game.gameState.blackCards = shuffle(jsonContent.blackCards);
-  game.gameState.whiteCards = shuffle(jsonContent.whiteCards);
+  
+  if (addBlackCards) {
+    game.gameState.blackCards = shuffle(jsonContent.blackCards);
+  }
+
+  if (addWhiteCards) {
+    game.gameState.whiteCards = shuffle(jsonContent.whiteCards);
+  }
 }
+
 function getPlayerIndex(username) {
   return game.players.findIndex((player) => player.username === username);
 }
+
 function resetGame() {
   // Reset game.
   game = {
+    hostUsername: null,
     players: [],
     gameState: {
       whiteCards: [],
@@ -127,6 +136,7 @@ function resetGame() {
   };
   console.log('Game reset!');
 }
+
 function removePlayer(username) {
   const playerIndex = game.players.findIndex(
     (player) => player.username === username
@@ -157,6 +167,7 @@ function removePlayer(username) {
 }
 
 io.on('connection', (socket) => {
+
   socket.on('newPlayer', (username) => {
     // Si el jugador ya existe, permitir que se reconecte.
     const existingPlayer = game.players.find(
@@ -229,12 +240,14 @@ io.on('connection', (socket) => {
 
     socket.username = username;
   });
+
   socket.on('updatedDecks', (decks) => {
     game.decks = decks;
 
     // Update the client states.
     io.sockets.emit('updatedGame', game);
   });
+
   socket.on('newCustomDeck', (deckFile) => {
     let customDeckJSON;
 
@@ -320,7 +333,19 @@ io.on('connection', (socket) => {
     // Send new data.
     io.sockets.emit('updatedGame', game);
   });
-  socket.on('start', (timeoutTime) => {
+
+  socket.on('start', () => {
+    if (
+      game.started ||
+      game.players.length < 3 ||
+      socket.username !== game.players[0].username
+    ) {
+      return;
+    }
+
+    game.hostUsername = socket.username;
+
+
     console.log(`Empezando juego con ${game.players.length} jugadores.`);
     addDecks(true, true);
 
@@ -348,36 +373,9 @@ io.on('connection', (socket) => {
     game.started = true;
     io.sockets.emit('updatedGame', game);
 
-    // Set the timeout times.
-    game.timeoutTime = timeoutTime;
-    io.sockets.emit('roundStart', game.timeoutTime);
-
     console.log('El juego ha empezado.');
   });
-  socket.on('roundStart', (roundStartTime) => {
-    const roundTime = game.timeoutTime;
-    const minutes = Math.floor(roundTime / 60);
-    const seconds = roundTime - minutes * 60;
-    const formattedTimeLeft = `${minutes}:${String(seconds).padStart(2, '0')}`;
 
-    game.gameState.turnTimeLeft = formattedTimeLeft;
-    io.sockets.emit('updatedGame', game);
-
-    timeLeftInterval = setInterval(() => {
-      const timeLeft = Math.ceil((game.timeoutTime * 1000 - (Date.now() - roundStartTime)) / 1000);
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft - minutes * 60;
-      const formattedTimeLeft = `${minutes}:${String(seconds).padStart(2, '0')}`;
-
-      game.gameState.turnTimeLeft = formattedTimeLeft;
-
-      // Stop when zero.
-      if(minutes === 0 && seconds === 0) {
-        clearInterval(timeLeftInterval);
-      }
-      io.sockets.emit('updatedGame', game);
-    }, 1000);
-  });
   socket.on('playedCard', (username, cardString) => {
     // Add new object to playedWhiteCards.
     if(!game.gameState.playedWhiteCards.find((object) => {
@@ -406,14 +404,35 @@ io.on('connection', (socket) => {
     }
     game.gameState.czarReady = playedCards === (game.players.length - 1) * game.gameState.blackCard.pick;
 
-    if(game.gameState.czarReady) {
-      clearInterval(timeLeftInterval);
-    }
-
     io.sockets.emit('updatedGame', game);
   });
+
   socket.on('czarPicked', (username) => {
+    const currentCzar = game.players[game.gameState.czar];
+
+    if (
+      !game.started ||
+      !game.gameState.czarReady ||
+      game.gameState.czarHasPicked ||
+      !currentCzar ||
+      socket.username !== currentCzar.username
+    ) {
+      return;
+    }
+
     const playerIndex = getPlayerIndex(username);
+
+    // No permitir que el zar se elija a sí mismo
+    // ni seleccionar un jugador que no haya jugado.
+    if (
+      playerIndex === -1 ||
+      playerIndex === game.gameState.czar ||
+      !game.gameState.playedWhiteCards.some(
+        (player) => player.username === username
+      )
+    ) {
+      return;
+    }
     
     game.log.push(`¡El jugador ${username} gana la ronda!`);
     
@@ -454,31 +473,56 @@ io.on('connection', (socket) => {
 
     io.sockets.emit('roundWinner', username);
     io.sockets.emit('updatedGame', game);
-
-    setTimeout(() => {
-      if(game.gameState.czar === game.players.length - 1) {
-        game.gameState.czar = 0;
-      }else {
-        game.gameState.czar++;
-      }
-      game.log.push(`Nuevo árbitro: ${game.players[game.gameState.czar].username}.`);
-      game.gameState.czarReady = false;
-      game.gameState.czarHasPicked = false;
-      game.gameState.playedWhiteCards = [];
-
-      if(game.gameState.blackCards.length === 0) {
-        game.log.push('Rellenando Cartas Negras.');
-        addDecks(true, false);
-      }
-      game.log.push(`Carta Negra en juego: ${game.gameState.blackCards[0].text}`);
-      game.gameState.blackCard = game.gameState.blackCards[0];
-      game.gameState.blackCards.shift();
-
-      io.sockets.emit('updatedGame', game);
-      io.sockets.emit('roundStart', game.timeoutTime);
-      console.log('Nueva ronda.');
-    }, 3000);
   });
+
+  socket.on('nextRound', () => {
+    if (!game.started || !game.gameState.czarHasPicked) {
+      return;
+    }
+
+    const currentCzar = game.players[game.gameState.czar];
+
+    const isHost = socket.username === game.hostUsername;
+    const isCzar = currentCzar &&
+      socket.username === currentCzar.username;
+
+    if (!isHost && !isCzar) {
+      return;
+    }
+
+    // Rotar el zar.
+    if (game.gameState.czar === game.players.length - 1) {
+      game.gameState.czar = 0;
+    } else {
+      game.gameState.czar++;
+    }
+
+    game.log.push(
+      `Nuevo árbitro: ${game.players[game.gameState.czar].username}.`
+    );
+
+    game.gameState.czarReady = false;
+    game.gameState.czarHasPicked = false;
+    game.gameState.playedWhiteCards = [];
+
+    // Robar una nueva carta negra.
+    if (game.gameState.blackCards.length === 0) {
+      game.log.push('Rellenando Cartas Negras.');
+      addDecks(true, false);
+    }
+
+    game.log.push(
+      `Carta Negra en juego: ${game.gameState.blackCards[0].text}`
+    );
+
+    game.gameState.blackCard = game.gameState.blackCards[0];
+    game.gameState.blackCards.shift();
+
+    io.sockets.emit('updatedGame', game);
+
+    console.log('Nueva ronda.');
+  });
+
   socket.on('kill', () => {
     Object.values(io.sockets.connected).forEach((theSocket) => {
       theSocket.disconnect();
@@ -486,6 +530,7 @@ io.on('connection', (socket) => {
     resetGame();
     console.log('El anfitrión terminó el juego.');
   });
+
   socket.on('disconnect', () => {
     const username = socket.username;
 
@@ -515,6 +560,7 @@ io.on('connection', (socket) => {
 app.get('/api/currentGame', (req, res) => {
   res.send(game);
 });
+
 app.get('/api/set/:set', (req, res) => {
   const set = req.params.set;
 
@@ -526,9 +572,11 @@ app.get('/api/set/:set', (req, res) => {
   }
   res.send(`El set '${req.params.set}' no existe.`);
 });
+
 app.get('/api/sets', (req, res) => {
   res.send(fs.readdirSync('src/server/sets/').map((set) => set.replace('.json', '')));
 });
+
 app.get('/api/randomWhiteCard/:set?', (req, res) => {
   const set = req.params.set || 'CAH-es-set';
 
@@ -540,6 +588,7 @@ app.get('/api/randomWhiteCard/:set?', (req, res) => {
   }
   res.send(`El set '${req.params.set}' no existe.`);
 });
+
 app.get('/api/randomBlackCard/:set?', (req, res) => {
   const set = req.params.set || 'CAH-es-set';
 

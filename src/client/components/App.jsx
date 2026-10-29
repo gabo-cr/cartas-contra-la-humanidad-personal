@@ -55,8 +55,6 @@ const styles = {
   }
 };
 
-let playTimeout;
-
 let connectTimeout;
 
 function Transition(props) {
@@ -157,25 +155,6 @@ class App extends Component {
       });
       playSound('dialog');
     });
-    socket.on('roundStart', (timeoutTime) => {
-      const playerIndex = this.state.game.players.findIndex((player) => this.state.username === player.username);
-      
-      if(playerIndex === 0) {
-        socket.emit('roundStart', Date.now());
-      }
-      if(playerIndex !== this.state.game.gameState.czar) {
-        playTimeout = setTimeout(() => {
-          const playerIndex = this.state.game.players.findIndex((player) => this.state.username === player.username);
-  
-          // Play cards.
-          for(let i = 0; i < this.state.game.gameState.blackCard.pick; i++) {
-            const cardToPlay = Math.floor(Math.random() * this.state.game.players[playerIndex].hand.length);
-
-            this.playCard(cardToPlay)();
-          }
-        }, timeoutTime * 1000 + 1000);
-      }
-    });
     // New game data.
     socket.on('updatedGame', (game) => {
       this.setState({ game: game });
@@ -189,7 +168,7 @@ class App extends Component {
     socket.on('roundWinner', (username) => {
       this.setState({
         snackbarOpen: true,
-        snackbarContent: `${username} gana la ronda. Siguiente ronda en 3 segundos...`
+        snackbarContent: `${username} gana la ronda. Ronda finalizada. El anfitrión o el zar puede iniciar la siguiente ronda.`
       });
       playSound('round-winner');
     });
@@ -240,6 +219,7 @@ class App extends Component {
       }
     });
   }
+
   toggleDeck = (deckCodeName) => () => {
     // Fail safe even though the checkbox is disabled.
     if(deckCodeName !== 'CAH-es-set') {
@@ -255,6 +235,7 @@ class App extends Component {
       this.setState(newState);
     }
   }
+
   toggleAllDecks = () => {
     const toggledDecks = this.state.game.decks;
 
@@ -273,12 +254,15 @@ class App extends Component {
     }));
     socket.emit('updatedDecks', toggledDecks);
   }
+  
   newCustomDeck = (file) => () => {
     socket.emit('newCustomDeck', file);
   }
-  start = (timeoutTime) => () => {
-    socket.emit('start', timeoutTime);
+
+  start = () => {
+    socket.emit('start');
   }
+
   playCard = (cardIndex) => () => {
     const isCzar = this.state.game.players.indexOf(this.state.game.players.find((player) => {
       return this.state.username === player.username;
@@ -299,15 +283,19 @@ class App extends Component {
 
       socket.emit('playedCard', this.state.username, this.state.game.players[playerIndex].hand[cardIndex]);
       playSound('play');
-      
-      clearTimeout(playTimeout);
     }
   }
+
   czarPick = (player) => () => {
     if(!this.state.game.gameState.czarHasPicked) {
       socket.emit('czarPicked', player);
     }
   }
+
+  nextRound = () => {
+    socket.emit('nextRound');
+  }
+  
   disconnect = () => {
     socket.close();
     this.setState({
@@ -315,9 +303,11 @@ class App extends Component {
       game: {}
     });
   }
+
   kill = () => {
     socket.emit('kill');
   }
+  
   closeDialog = () => {
     this.setState((prevState) =>  ({
       dialog: {
@@ -326,9 +316,11 @@ class App extends Component {
       }
     }));
   };
+  
   closeEndGameDialog = () => {
     this.setState({ endGameDialog: false });
   }
+  
   handleSnackbarClose = () => {
     this.setState({ snackbarOpen: false });
   };
@@ -352,23 +344,24 @@ class App extends Component {
           {
             this.state.connected
               ? <Game
-                username={this.state.username}
-                game={this.state.game}
-                disconnect={this.disconnect}
-                start={this.start}
-                playCard={this.playCard}
-                czarPick={this.czarPick}
-                kill={this.kill}
-                decks={this.state.game.decks}
-                toggleDeck={this.toggleDeck}
-                newCustomDeck={this.newCustomDeck}
-                toggleAllDecks={this.toggleAllDecks}
-              />
+                  username={this.state.username}
+                  game={this.state.game}
+                  disconnect={this.disconnect}
+                  start={this.start}
+                  playCard={this.playCard}
+                  czarPick={this.czarPick}
+                  kill={this.kill}
+                  decks={this.state.game.decks}
+                  toggleDeck={this.toggleDeck}
+                  newCustomDeck={this.newCustomDeck}
+                  toggleAllDecks={this.toggleAllDecks}
+                  nextRound={this.nextRound}
+                />
               : <Start
-                username={this.state.username}
-                handleUsernameChange={this.handleUsernameChange}
-                connect={this.connectToGame}
-              />
+                  username={this.state.username}
+                  handleUsernameChange={this.handleUsernameChange}
+                  connect={this.connectToGame}
+                />
           }
 
           <Snackbar

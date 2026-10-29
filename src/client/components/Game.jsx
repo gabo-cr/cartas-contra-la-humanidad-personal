@@ -11,22 +11,7 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import WarningIcon from '@material-ui/icons/Warning';
-import FormGroup from '@material-ui/core/FormGroup';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Checkbox from '@material-ui/core/Checkbox';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
 import Slide from '@material-ui/core/Slide';
-import Input from '@material-ui/core/Input';
-import InputLabel from '@material-ui/core/InputLabel';
-import MenuItem from '@material-ui/core/MenuItem';
-import FormHelperText from '@material-ui/core/FormHelperText';
-import FormControl from '@material-ui/core/FormControl';
-import Select from '@material-ui/core/Select';
-
 import TheActualGame from './TheActualGame';
 
 function Transition(props) {
@@ -60,8 +45,7 @@ class Game extends Component {
     this.state = {
       adminPanelOpen: false,
       jsonDialog: false,
-      customDeck: null,
-      timeoutTime: 60
+      customDeck: null
     };
   }
   copyCode = (code) => () => {
@@ -101,12 +85,9 @@ class Game extends Component {
       this.closeDialog();
     }
   }
-  handleTimeoutTimeChange = (event) => {
-    this.setState({ timeoutTime: event.target.value });
-  }
 
   render() {
-    const { classes, username, game, start, playCard, czarPick, kill, decks, toggleDeck, toggleAllDecks } = this.props;
+    const { classes, username, game, start, playCard, czarPick, nextRound, kill, decks, toggleDeck, toggleAllDecks } = this.props;
 
     const clientIndex = game.players.indexOf(game.players.find((player) => {
       return username === player.username;
@@ -117,34 +98,17 @@ class Game extends Component {
         {
           !game.started
             ? <>
-                {
-                  game.players.length >= 3
-                    ? username === game.players[0].username
-                      ? <Button variant='contained' color='primary' className={classes.button} style={{ marginTop: '35px' }} onClick={start(this.state.timeoutTime)}>Empezar con {game.players.length} jugadores</Button>
-                      : <Button variant='contained' color='primary' className={classes.button} style={{ marginTop: '35px' }} disabled onClick={start}>Empezar con {game.players.length} jugadores (Sólo el anfitrión puede empezar el juego)</Button>
-                    : <Button variant='contained' color='primary' disabled className={classes.button} style={{ marginTop: '35px' }}>Empezar ({game.players.length} de 3 jugadores como mínimo)</Button>
-                }
-
-                {
-                  username === game.players[0].username
-                    ? <form className={classes.formRoot} autoComplete='off'>
-                      <FormControl className={classes.formControl}>
-                        <InputLabel htmlFor='age-helper'>Tiempo de espera</InputLabel>
-                        <Select
-                          value={this.state.timeoutTime}
-                          onChange={this.handleTimeoutTimeChange}
-                          input={<Input name='timeoutTime' id='timeout-time' />}
-                        >
-                          <MenuItem value={30}>30 segundos</MenuItem>
-                          <MenuItem value={60}>1 minuto</MenuItem>
-                          <MenuItem value={120}>2 minutos</MenuItem>
-                          <MenuItem value={180}>3 minutos</MenuItem>
-                        </Select>
-                        <FormHelperText>Cuánto debería durar el turno de cada jugador antes de que una carta se juegue automáticamente.</FormHelperText>
-                      </FormControl>
-                    </form>
-                    : null
-                }
+                <Button 
+                  variant='contained' 
+                  color='primary' 
+                  className={classes.button} 
+                  style={{ marginTop: '35px' }} 
+                  onClick={start}
+                  disabled={username !== game.players[0].username || game.players.length < 3}
+                  >
+                    Empezar con {game.players.length} jugadores 
+                    {game.players.length < 3 && ' (Se necesitan al menos 3 jugadores)'}
+                </Button>
 
                 {/*
                 <Typography variant='h4' style={{ marginTop: '20px' }}>Selecciona barajas a usar</Typography>
@@ -256,11 +220,12 @@ class Game extends Component {
                 </ul>
               </>
             : <TheActualGame
-              username={username}
-              game={game}
-              playCard={playCard}
-              czarPick={czarPick}
-            />
+                username={username}
+                game={game}
+                playCard={playCard}
+                czarPick={czarPick}
+                nextRound={nextRound}
+              />
         }
         {
           clientIndex === 0
