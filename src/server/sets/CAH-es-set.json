@@ -266,6 +266,18 @@
     {
       "text": "¿Quién dejó la mancha en el sofá?",
       "pick": 1
+    },
+    {
+      "text": "La ciencia nunca podrá explicar el origen de ___.",
+      "pick": 1
+    },
+    {
+      "text": "Un tribunal internacional encontró a ___ culpable de ___.",
+      "pick": 2
+    },
+    {
+      "text": "La CIA ahora interroga a los espías enemigos sometiéndolos repetidamente a ___.",
+      "pick": 1
     }
   ],
   "whiteCards": [
@@ -585,6 +597,17 @@
     "Papi a la orden",
     "Mami a la orden",
     "Perico tierno",
-    "Juan Orlando Hernández"
+    "Juan Orlando Hernández",
+    "Partir la torta",
+    "La torta",
+    "Caballo homosexual de la montaña",
+    "La primera vez",
+    "Hipsters",
+    "Ser secuestrado por Peter Pan",
+    "Mi machete",
+    "Un latin lover bien apasionado",
+    "Ceviche de concha",
+    "Caldo de salchicha",
+    "Chicas superpoderosas"
   ]
 }
