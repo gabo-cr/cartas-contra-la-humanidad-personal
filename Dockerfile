@@ -1,20 +1,31 @@
+
 FROM node:14.17.0
 
-# Create app directory
 WORKDIR /usr/src/app
 
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
 COPY package*.json ./
 
-RUN npm install
+RUN npm ci
 
-# Build for production
-RUN npm ci --omit=dev
 
-# Bundle app source
+FROM node:14.17.0
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+
+RUN npm ci
+
+COPY . .
+
+# Compile frontend and server
+RUN npm run build
+
+EXPOSE 8000
+
+CMD ["npm", "run", "production"]
 COPY . .
 
 EXPOSE 8000
-ENTRYPOINT npm run start
+
+CMD ["npm", "run", "production"]
